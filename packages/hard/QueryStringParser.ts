@@ -1,4 +1,4 @@
-export {}
+export { }
 
 /*
   151 - Query String Parser
@@ -19,14 +19,41 @@ export {}
   > View on GitHub: https://tsch.js.org/151
 */
 
-
 /* _____________ Your Code Here _____________ */
+// 合并两个接口
+type MergeObj<S extends object, T extends object> = {
+  [K in keyof T | keyof S]: K extends keyof S
+  ? K extends keyof T
+  ? S[K] extends any[]
+  ? T[K] extends any[]
+  ? [...S[K], ...T[K]]
+  : [...S[K], T[K]]
+  : S[K] extends T[K]
+  ? S[K]
+  :S[K] extends boolean
+  ? T[K] extends boolean
+  ? S[K] : [S[K], T[K]] : [S[K], T[K]]
+  : S[K]
+  : K extends keyof T ? T[K] : never
+}
 
-type ParseQueryString = any
+type SplitQuery<T extends string, Result extends object = {}> =
+  T extends ''
+  ? Result
+  : T extends `${infer P}&${infer Rest}`
+  ? P extends `${infer K}=${infer V}`
+  ? MergeObj<{ [k in K]: V }, SplitQuery<Rest, Result>>
+  : MergeObj<{ [k in P]: true }, SplitQuery<Rest, Result>>
+  : T extends `${infer K}=${infer V}`
+  ? { [k in K]: V }
+  : { [k in T]: true }
 
+type ParseQueryString<T extends string> = T extends '' ? {} : SplitQuery<T>
 
 /* _____________ Test Cases _____________ */
 import type { Equal, Expect } from '@type-challenges/utils'
+
+type R = ParseQueryString<'k1=v1&k2=v2&k1=v2'>
 
 type cases = [
   Expect<Equal<ParseQueryString<''>, {}>>,
@@ -41,12 +68,9 @@ type cases = [
   Expect<Equal<ParseQueryString<'k1=v1&k1=v1'>, { k1: 'v1' }>>,
 ]
 
-
-
 /* _____________ Further Steps _____________ */
 /*
   > Share your solutions: https://tsch.js.org/151/answer
   > View solutions: https://tsch.js.org/151/solutions
   > More Challenges: https://tsch.js.org
 */
-
